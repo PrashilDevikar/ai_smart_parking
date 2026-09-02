@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  fullName      String
+  email         String         @unique
+  phone         String?
+  vehicleNumber String?
+  passwordHash  String
+  role          String         @default("USER") // USER, OPERATOR
+  status        String         @default("ACTIVE") // ACTIVE, SUSPENDED
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  bookings      Booking[]
+  notifications Notification[]
+
+  @@index([email])
+  @@index([vehicleNumber])
+}
+
+model ParkingLocation {
+  id         String        @id @default(cuid())
+  name       String
+  address    String
+  totalSlots Int           @default(24)
+  createdAt  DateTime      @default(now())
+  slots      ParkingSlot[]
+}
+
+model ParkingSlot {
+  id            String          @id @default(cuid())
+  slotNumber    String // A1, A2, etc.
+  floor         String // Ground Floor, Floor 1, Floor 2
+  vehicleType   String          @default("CAR") // CAR, BIKE, EV
+  status        String          @default("AVAILABLE") // AVAILABLE, OCCUPIED, RESERVED, MAINTENANCE
+  pricePerHour  Float           @default(5.0)
+  polygonCoords String? // JSON string for coordinate mapping
+  locationId    String
+  location      ParkingLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  bookings      Booking[]
+
+  @@index([slotNumber])
+  @@index([floor])
+  @@index([status])
+}
+
+model Booking {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slotId        String
+  slot          ParkingSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  startTime     DateTime
+  endTime       DateTime
+  duration      Int // In hours
+  amount        Float
+  vehicleNumber String
+  status        String      @default("ACTIVE") // PENDING, ACTIVE, COMPLETED, CANCELLED
+  paymentStatus String      @default("PAID") // PAID, PENDING, REFUNDED
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([slotId])
+  @@index([status])
+  @@index([startTime, endTime])
+}
+
+model AIDetection {
+  id                  String   @id @default(cuid())
+  imageRef            String?
+  totalVehicles       Int      @default(0)
+  totalSlots          Int      @default(8)
+  occupiedSlots       Int      @default(0)
+  availableSlots      Int      @default(0)
+  occupancyPercentage Float    @default(0.0)
+  confidenceAvg       Float    @default(0.0)
+  slotDetailsJson     String?
+  processedAt         DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, BOOKING, ALERT
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model SystemSetting {
+  id                     String   @id @default(cuid())
+  parkingName            String   @default("AI Smart Parking Hub")
+  pricePerHour           Float    @default(5.0)
+  floorsCount            Int      @default(3)
+  openingHour            String   @default("06:00")
+  closingHour            String   @default("23:59")
+  aiConfidenceThreshold  Float    @default(0.30)
+  autoReleaseMinutes     Int      @default(15)
+  updatedAt              DateTime @updatedAt
+}

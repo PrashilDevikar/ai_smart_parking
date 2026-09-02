@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  ai-vision:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=https://svoqmezvgujbqunjtrii.supabase.co
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_ECZKglC5auCD6sDbkbwwqA_Jplg1Wwt
+      - JWT_SECRET=super-secret-smart-parking-jwt-key-2026-very-secure
+    depends_on:
+      - ai-vision
+    restart: always
