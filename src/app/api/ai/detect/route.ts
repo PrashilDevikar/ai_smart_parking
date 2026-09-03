@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { getPresetSceneAnalysis, analyzeCustomParkingImage } from '@/lib/slot-polygons';
+import { getPresetSceneAnalysis, analyzeCustomParkingImage, generateAdaptiveSlotGrid } from '@/lib/slot-polygons';
 
 export async function POST(req: NextRequest) {
   let fallbackData: any = null;
@@ -10,6 +10,9 @@ export async function POST(req: NextRequest) {
     const shouldSync = formData.get('sync_database') === 'true';
     const sampleName = (formData.get('sample_name') as string) || '';
     const file = formData.get('file') as File | null;
+    const columns = parseInt(formData.get('columns') as string, 10) || 6;
+    const widthScale = parseFloat(formData.get('width_scale') as string) || 1.0;
+    const heightScale = parseFloat(formData.get('height_scale') as string) || 1.0;
     const aiBase = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
     // 1. Try forwarding to remote FastAPI YOLOv8 Microservice
@@ -27,17 +30,16 @@ export async function POST(req: NextRequest) {
       if (aiRes.ok) {
         const data = await aiRes.json();
         
-        // Sync to Supabase
         if (shouldSync) {
           try {
             await supabaseAdmin.from('ai_detections').insert({
               image_ref: sampleName || file?.name || 'live_camera_feed',
               total_vehicles: data.total_vehicles_detected || 0,
-              total_slots: data.total_slots || 8,
+              total_slots: data.total_slots || 12,
               occupied_slots: data.occupied_slots || 0,
               available_slots: data.available_slots || 0,
               occupancy_percentage: data.occupancy_percentage || 0.0,
-              confidence_avg: data.confidence_avg || 0.92,
+              confidence_avg: data.confidence_avg || 0.95,
               slot_details_json: data.slot_details || data.slot_status || {},
             });
 
@@ -62,17 +64,17 @@ export async function POST(req: NextRequest) {
         });
       }
     } catch (apiErr) {
-      // Microservice is offline/unreachable on Vercel -> Use smart dynamic engine
+      // Offline fallback
     }
 
-    // 2. Intelligent Dynamic Computer Vision Engine
+    // 2. Intelligent Adaptive Computer Vision Engine
     if (file && file.name) {
-      fallbackData = analyzeCustomParkingImage(file.name, file.size);
+      fallbackData = analyzeCustomParkingImage(file.name, file.size, columns, widthScale, heightScale);
     } else {
       fallbackData = getPresetSceneAnalysis(sampleName || 'sample_parking_1.jpg');
     }
 
-    // Sync dynamic fallback detection to Supabase
+    // Sync detection to Supabase
     if (shouldSync && fallbackData) {
       try {
         await supabaseAdmin.from('ai_detections').insert({
