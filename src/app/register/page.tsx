@@ -29,39 +29,40 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const { data, error: upError } = await supabase.auth.signUp({
-        email: formData.email.trim(),
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName.trim(),
-            phone: formData.phone.trim(),
-            vehicle_number: formData.vehicleNumber.toUpperCase().trim(),
-            role: 'USER',
-          },
-        },
+      // 1. Register with backend API
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(formData),
       });
 
-      if (upError) {
-        setError(upError.message || 'Registration failed');
-        setIsLoading(false);
-        return;
-      }
+      const data = await res.json();
 
-      if (data.user) {
-        await supabase.from('profiles').upsert({
-          id: data.user.id,
-          email: formData.email.trim(),
-          full_name: formData.fullName.trim(),
-          phone: formData.phone.trim(),
-          vehicle_number: formData.vehicleNumber.toUpperCase().trim(),
-          role: 'USER',
-          status: 'ACTIVE',
-        });
+      if (res.ok && data.success) {
+        // Background sync to Supabase Auth if needed
+        try {
+          await supabase.auth.signUp({
+            email: formData.email.trim(),
+            password: formData.password,
+            options: {
+              data: {
+                full_name: formData.fullName.trim(),
+                phone: formData.phone.trim(),
+                vehicle_number: formData.vehicleNumber.toUpperCase().trim(),
+                role: 'USER',
+              },
+            },
+          });
+        } catch {}
 
         setSuccess('Account created successfully! Loading your dashboard...');
         window.location.href = '/dashboard';
+        return;
       }
+
+      setError(data.error || 'Registration failed. Please try again.');
+      setIsLoading(false);
     } catch (err: any) {
       setError(err?.message || 'Network error. Please try again.');
       setIsLoading(false);

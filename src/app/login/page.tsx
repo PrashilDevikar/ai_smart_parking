@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase/client';
-import { Mail, Lock, LogIn, AlertCircle, CheckCircle2, Car } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, CheckCircle2, Car, Shield, UserCheck } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,59 +17,44 @@ export default function LoginPage() {
 
   const supabase = createClient();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const performLogin = async (loginEmail: string, loginPassword: string) => {
     setError('');
     setSuccess('');
     setIsLoading(true);
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password,
+      // 1. Authenticate against our backend auth API
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: loginEmail.trim(), password: loginPassword }),
       });
 
-      if (authError) {
-        if (authError.message.includes('Invalid login credentials') || authError.message.includes('Email not confirmed')) {
-          const isDemoOperator = email.toLowerCase() === 'operator@aiparking.com';
-          const isDemoUser = email.toLowerCase() === 'john@example.com';
+      const data = await res.json();
 
-          if (isDemoOperator || isDemoUser) {
-            const role = isDemoOperator ? 'OPERATOR' : 'USER';
-            const fullName = isDemoOperator ? 'Chief Operator' : 'John Doe';
-            const phone = isDemoOperator ? '+1 555 9999' : '+1 555 0142';
-            const vehicle = isDemoOperator ? 'ADMIN-01' : 'NYC-4821';
-
-            const { data: upData, error: upError } = await supabase.auth.signUp({
-              email: email.trim(),
-              password: password,
-              options: {
-                data: { full_name: fullName, phone, vehicle_number: vehicle, role },
-              },
-            });
-
-            if (!upError && upData.user) {
-              setSuccess('Demo account initialized! Loading dashboard...');
-              window.location.href = isDemoOperator ? '/operator/dashboard' : '/dashboard';
-              return;
-            }
-          }
-        }
-        setError(authError.message || 'Invalid email or password');
-        setIsLoading(false);
-        return;
-      }
-
-      if (authData.user) {
-        // Synchronize server JWT cookie
+      if (res.ok && data.success) {
+        // Background sync with Supabase client auth
         try {
-          await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email.trim(), password }),
+          await supabase.auth.signInWithPassword({
+            email: loginEmail.trim(),
+            password: loginPassword,
           });
         } catch {}
 
+        setSuccess(`Welcome back, ${data.user?.fullName || 'User'}! Redirecting...`);
+        const dest = data.user?.role === 'OPERATOR' ? '/operator/dashboard' : '/dashboard';
+        window.location.href = dest;
+        return;
+      }
+
+      // 2. Direct Supabase fallback
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: loginEmail.trim(),
+        password: loginPassword,
+      });
+
+      if (!authError && authData.user) {
         setSuccess('Authentication successful! Loading dashboard...');
         const { data: profile } = await supabase
           .from('profiles')
@@ -80,17 +65,26 @@ export default function LoginPage() {
         const role = profile?.role || authData.user.user_metadata?.role || 'USER';
         const dest = role === 'OPERATOR' ? '/operator/dashboard' : '/dashboard';
         window.location.href = dest;
+        return;
       }
+
+      setError(data.error || authError?.message || 'Invalid email or password');
+      setIsLoading(false);
     } catch (err: any) {
       setError(err?.message || 'Connection error. Please try again.');
       setIsLoading(false);
     }
   };
 
-  const handleQuickLogin = (demoEmail: string, demoPass: string) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await performLogin(email, password);
+  };
+
+  const handleQuickLogin = async (demoEmail: string, demoPass: string) => {
     setEmail(demoEmail);
     setPassword(demoPass);
-    setError('');
+    await performLogin(demoEmail, demoPass);
   };
 
   return (
@@ -103,7 +97,7 @@ export default function LoginPage() {
           AI SMART PARKING
         </h2>
         <p className="mt-2 text-sm text-slate-500">
-          Sign in to access real-time occupancy and slot reservations (Supabase Auth)
+          Sign in to access real-time occupancy and slot reservations
         </p>
       </div>
 
@@ -151,7 +145,7 @@ export default function LoginPage() {
               isLoading={isLoading}
               rightIcon={<LogIn className="w-4 h-4" />}
             >
-              Sign In with Supabase
+              Sign In
             </Button>
           </form>
 
@@ -162,20 +156,28 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
+                disabled={isLoading}
                 onClick={() => handleQuickLogin('operator@aiparking.com', 'Operator@123')}
-                className="p-3 text-left rounded-2xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100/80 transition-all hover:scale-[1.02]"
+                className="p-3 text-left rounded-2xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100/80 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
               >
-                <div className="font-bold text-purple-900 text-xs font-heading">Operator</div>
-                <div className="text-[10px] text-purple-600 font-mono mt-0.5">operator@aiparking.com</div>
+                <div className="flex items-center gap-1.5 font-bold text-purple-900 text-xs font-heading">
+                  <Shield className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Operator</span>
+                </div>
+                <div className="text-[10px] text-purple-600 font-mono mt-1">operator@aiparking.com</div>
               </button>
 
               <button
                 type="button"
+                disabled={isLoading}
                 onClick={() => handleQuickLogin('john@example.com', 'User@123')}
-                className="p-3 text-left rounded-2xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/80 transition-all hover:scale-[1.02]"
+                className="p-3 text-left rounded-2xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/80 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
               >
-                <div className="font-bold text-emerald-900 text-xs font-heading">Customer</div>
-                <div className="text-[10px] text-emerald-600 font-mono mt-0.5">john@example.com</div>
+                <div className="flex items-center gap-1.5 font-bold text-emerald-900 text-xs font-heading">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Customer</span>
+                </div>
+                <div className="text-[10px] text-emerald-600 font-mono mt-1">john@example.com</div>
               </button>
             </div>
           </div>
