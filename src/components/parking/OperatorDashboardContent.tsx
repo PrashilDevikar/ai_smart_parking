@@ -76,7 +76,7 @@ export default function OperatorDashboardContent() {
           >
             Refresh Metrics
           </Button>
-          <Link href="/live-parking">
+          <Link href="/operator/live-parking">
             <Button size="sm" variant="secondary" leftIcon={<Video className="w-4 h-4" />}>
               Open Live AI
             </Button>

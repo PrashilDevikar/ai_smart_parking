@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 
 const OP_NAV = [
   { name: 'Dashboard', href: '/operator/dashboard', icon: LayoutDashboard },
-  { name: 'Live AI Camera', href: '/live-parking', icon: Video, badge: 'LIVE' },
+  { name: 'Live AI Camera', href: '/operator/live-parking', icon: Video, badge: 'LIVE' },
   { name: 'Manage Slots', href: '/operator/slots', icon: Grid3X3 },
   { name: 'User Management', href: '/operator/users', icon: Users },
   { name: 'All Bookings', href: '/operator/bookings', icon: CalendarCheck },
