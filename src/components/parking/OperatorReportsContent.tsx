@@ -41,14 +41,14 @@ export default function OperatorReportsContent() {
     csvContent += 'AI SMART PARKING SYSTEM — OPERATIONAL REPORT\r\n\r\n';
     csvContent += 'SUMMARY METRICS\r\n';
     csvContent += `Total Bookings,${data.summary.totalBookingsCount}\r\n`;
-    csvContent += `Total Revenue,$${data.summary.totalRevenue}\r\n`;
+    csvContent += `Total Revenue,₹${data.summary.totalRevenue}\r\n`;
     csvContent += `Avg Booking Duration,${data.summary.averageBookingDuration}\r\n`;
     csvContent += `Avg Daily Occupancy,${data.summary.averageDailyOccupancy}\r\n\r\n`;
 
     csvContent += 'MOST-USED PARKING SLOTS\r\n';
     csvContent += 'Slot Number,Floor,Total Bookings,Revenue\r\n';
     data.mostUsedSlots.forEach((s: any) => {
-      csvContent += `${s.slotNumber},${s.floor},${s.count},$${s.revenue}\r\n`;
+      csvContent += `${s.slotNumber},${s.floor},${s.count},₹${s.revenue}\r\n`;
     });
 
     csvContent += '\r\nPEAK HOURS DISTRIBUTION\r\n';

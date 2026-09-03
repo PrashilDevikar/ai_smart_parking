@@ -294,7 +294,7 @@ export default function OperatorSlotsContent() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Price Per Hour ($)</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Price Per Hour (₹)</label>
               <input type="number" step="0.5" min="0.5" value={addForm.pricePerHour} onChange={(e) => setAddForm({ ...addForm, pricePerHour: parseFloat(e.target.value) || 5.0 })} className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white" required />
             </div>
           </div>
@@ -336,7 +336,7 @@ export default function OperatorSlotsContent() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Price Per Hour ($)</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Price Per Hour (₹)</label>
               <input type="number" step="0.5" min="0.5" value={editForm.pricePerHour} onChange={(e) => setEditForm({ ...editForm, pricePerHour: parseFloat(e.target.value) || 5.0 })} className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-white" required />
             </div>
             <div>

@@ -184,7 +184,7 @@ export default function BookSlotContent() {
                   <div className="text-right">
                     <span className="text-xs text-slate-500 font-medium block">Rate</span>
                     <span className="text-base font-bold text-blue-600 font-heading">
-                      {selectedSlot ? `${formatCurrency(selectedSlot.pricePerHour)}/hr` : '$5.00/hr'}
+                      {selectedSlot ? `${formatCurrency(selectedSlot.pricePerHour)}/hr` : '₹5.00/hr'}
                     </span>
                   </div>
                 </div>

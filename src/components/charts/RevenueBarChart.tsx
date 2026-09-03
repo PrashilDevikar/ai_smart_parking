@@ -26,7 +26,7 @@ export function RevenueBarChart({ data }: { data?: Array<{ day: string; revenue:
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#64748B', fontSize: 12 }}
-            tickFormatter={(val) => `$${val}`}
+            tickFormatter={(val) => `₹${val}`}
           />
           <Tooltip
             contentStyle={{
