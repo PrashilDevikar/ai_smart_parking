@@ -79,9 +79,20 @@ export default function BookSlotContent() {
     setIsLoading(true);
 
     try {
+      let authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          authHeaders['Authorization'] = `Bearer ${session.access_token}`;
+        }
+      } catch {}
+
       const res = await fetch('/api/bookings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
+        credentials: 'include',
         body: JSON.stringify({
           slotId: selectedSlot.id,
           startTime,

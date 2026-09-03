@@ -61,6 +61,15 @@ export default function LoginPage() {
       }
 
       if (authData.user) {
+        // Synchronize server JWT cookie
+        try {
+          await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email.trim(), password }),
+          });
+        } catch {}
+
         setSuccess('Authentication successful! Loading dashboard...');
         const { data: profile } = await supabase
           .from('profiles')
