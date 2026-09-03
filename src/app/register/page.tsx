@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { createClient } from '@/lib/supabase/client';
 import { Mail, Lock, User, Phone, Car, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -20,8 +19,6 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const supabase = createClient();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -29,7 +26,6 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // 1. Register with backend API
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -40,22 +36,6 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // Background sync to Supabase Auth if needed
-        try {
-          await supabase.auth.signUp({
-            email: formData.email.trim(),
-            password: formData.password,
-            options: {
-              data: {
-                full_name: formData.fullName.trim(),
-                phone: formData.phone.trim(),
-                vehicle_number: formData.vehicleNumber.toUpperCase().trim(),
-                role: 'USER',
-              },
-            },
-          });
-        } catch {}
-
         setSuccess('Account created successfully! Loading your dashboard...');
         window.location.href = '/dashboard';
         return;
